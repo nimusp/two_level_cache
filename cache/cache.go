@@ -101,11 +101,15 @@ func (c *Cache) startItemCleaner() {
 				c.Mutex.Lock()
 				if c.isWithLog {
 					log.Println("mapToSave len", len(mapToSave))
+					log.Printf("currently %d objects in memory: %+v", len(mapToSave), mapToSave)
 				}
 				for k, v := range mapToSave {
 					c.writeToFile(k, v)
 					delete(c.Data, k)
 					delete(mapToSave, k)
+				}
+				if c.isWithLog {
+					log.Println("All objects are deleted from memory")
 				}
 				c.Mutex.Unlock()
 			}
