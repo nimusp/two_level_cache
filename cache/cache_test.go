@@ -11,18 +11,18 @@ var fastCache *Cache
 func init() {
 	checkIntervalTime := 1 * time.Second
 	holdInMemoryTime := 1 * time.Second
-	cache = InitNewCache(checkIntervalTime, holdInMemoryTime)
+	cache = InitNewCache(checkIntervalTime, holdInMemoryTime, false)
 
 	shortCheckIntervalTime := 1 * time.Millisecond
 	shortHoldInMemoryTime := 1 * time.Millisecond
-	fastCache = InitNewCache(shortCheckIntervalTime, shortHoldInMemoryTime)
+	fastCache = InitNewCache(shortCheckIntervalTime, shortHoldInMemoryTime, false)
 }
 
 func TestWrongInit1(t *testing.T) {
 	defer func() {
 		recover()
 	}()
-	InitNewCache(-1*time.Second, 1*time.Second)
+	InitNewCache(-1*time.Second, 1*time.Second, false)
 	t.Error("Not panic on wrong parameters")
 }
 
@@ -30,7 +30,7 @@ func TestWrongInit2(t *testing.T) {
 	defer func() {
 		recover()
 	}()
-	InitNewCache(1*time.Second, -1*time.Second)
+	InitNewCache(1*time.Second, -1*time.Second, false)
 	t.Error("Not panic on wrong parameters")
 }
 
@@ -92,13 +92,13 @@ func TestCacheClear(t *testing.T) {
 	fastCache.Add("some", 42)
 	fastCache.Add("another", "value")
 
-	currentData := fastCache.GetOnlyInMemory()
+	currentData := fastCache.getOnlyInMemory()
 	if !(len(currentData) > 0) {
 		t.Error("Empty data in memory")
 	}
 
 	time.Sleep(2 * time.Second)
-	afterIntervalData := cache.GetOnlyInMemory()
+	afterIntervalData := cache.getOnlyInMemory()
 	if len(afterIntervalData) > 0 {
 		t.Error("Data don't clear", afterIntervalData)
 	}

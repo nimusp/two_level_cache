@@ -3,8 +3,8 @@ package cache
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"sync"
 	"time"
@@ -22,12 +22,13 @@ type Cache struct {
 	InMemoryTime  time.Duration
 	CheckInterval time.Duration
 	Mutex         sync.RWMutex
+	isWithLog     bool
 }
 
 // InitNewCache инициализирует экземпляр кэша с параментами:
 // checkInterval - интервал контроля,
 // inMemoryTime - время удержания объекта в памяти
-func InitNewCache(checkInterval time.Duration, inMemoryTime time.Duration) *Cache {
+func InitNewCache(checkInterval time.Duration, inMemoryTime time.Duration, isWithLog bool) *Cache {
 	if int64(checkInterval) < 0 || inMemoryTime < 0 {
 		panic("Wrong parameters")
 	}
@@ -37,6 +38,7 @@ func InitNewCache(checkInterval time.Duration, inMemoryTime time.Duration) *Cach
 		Data:          items,
 		InMemoryTime:  inMemoryTime,
 		CheckInterval: checkInterval,
+		isWithLog:     isWithLog,
 	}
 	cache.startItemCleaner()
 
@@ -76,7 +78,7 @@ func (c *Cache) Delete(key string) {
 	delete(c.Data, key)
 }
 
-func (c *Cache) GetOnlyInMemory() map[string]сacheItem {
+func (c *Cache) getOnlyInMemory() map[string]сacheItem {
 	return c.Data
 }
 
@@ -97,7 +99,9 @@ func (c *Cache) startItemCleaner() {
 			}
 			if len(mapToSave) > 0 {
 				c.Mutex.Lock()
-				fmt.Println("mapToSave len", len(mapToSave))
+				if c.isWithLog {
+					log.Println("mapToSave len", len(mapToSave))
+				}
 				for k, v := range mapToSave {
 					c.writeToFile(k, v)
 					delete(c.Data, k)
@@ -122,7 +126,9 @@ func (c *Cache) readFromFile(key string) (interface{}, bool) {
 
 	data, err := ioutil.ReadFile(fileDir)
 	if err != nil {
-		fmt.Println(err)
+		if c.isWithLog {
+			log.Println(err)
+		}
 		return nil, false
 	}
 	var result interface{}
@@ -130,7 +136,9 @@ func (c *Cache) readFromFile(key string) (interface{}, bool) {
 	if err != nil {
 		return nil, false
 	}
-	fmt.Println("Read from file", result)
+	if c.isWithLog {
+		log.Println("Read from file", result)
+	}
 	return result, true
 }
 
@@ -150,7 +158,9 @@ func (c *Cache) writeToFile(key string, value interface{}) error {
 		os.Remove(fileDir)
 	}
 	err = ioutil.WriteFile(fileDir, rawData, 0644)
-	fmt.Println("Wrote to file", value)
+	if c.isWithLog {
+		log.Println("Wrote to file", value)
+	}
 	return err
 }
 
